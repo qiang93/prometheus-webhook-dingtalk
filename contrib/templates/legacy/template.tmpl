@@ -1,0 +1,32 @@
+
+{{ define "__subject" }}[{{ .Status | toUpper }}{{ if eq .Status "firing" }}告警:{{ .Alerts.Firing | len }}{{ else }}恢复{{ end }}]{{ end }} 
+{{ define "__alertmanagerURL" }}{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}{{ end }}
+
+{{ define "__text_alert_list" }}
+{{ if eq .Status "firing" }}
+{{ range .Alerts.Firing }}
+**名称: <font color=#FF0000 face="黑体">{{ .Labels.alertname }}  </font>**  
+**时间:** {{ ( .StartsAt.Add 28800e9 ).Format "2006-01-02 15:04:05" }}  
+**环境:** {{ .Labels.cluster }}  
+**图形:** [📈]({{ .GeneratorURL }})  
+**标签:**  
+{{ range .Labels.SortedPairs }}> - {{ .Name }}: {{ .Value | markdown | html }}
+{{ end }}
+**<font color=#008000 size=3 face="黑体">{{ .Annotations.description }}{{ .Annotations.message }}{{ .Annotations.summary }}</font>**  
+{{ end }}
+
+{{ else if eq .Status "resolved" }}
+{{ range .Alerts.Resolved }} 
+**名称: <font color=#FF0000 face="黑体">{{ .Labels.alertname }}  </font>**  
+**环境:** {{ .Labels.cluster }}  
+**触发时间:** {{ ( .StartsAt.Add 28800e9 ).Format "2006-01-02 15:04:05" }}  
+**恢复时间:** {{ ( .EndsAt.Add 28800e9 ).Format "2006-01-02 15:04:05" }}  
+{{ end }}{{ end }}
+{{ end }}
+
+
+{{ define "__alertmanagerURL" }}{{ end }}
+{{ define "ding.link.title" }}{{ template "__subject" . }}{{ end }}
+{{ define "ding.link.content" }}#### [{{ if eq .Status "firing" }}告警:{{ .Alerts.Firing | len }}{{ else }}恢复{{ end }}] **[{{ index .CommonLabels "severity" }}]({{ template "__alertmanagerURL" . }})**
+{{ template "__text_alert_list" . }}
+{{ end }}
